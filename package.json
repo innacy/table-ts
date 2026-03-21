@@ -1,0 +1,27 @@
+{
+  "name": "@innacy/table",
+  "version": "1.0.0",
+  "description": "cnips Table Accessor - TypeScript client for cnips table operations",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "cnips",
+    "table",
+    "accessor"
+  ],
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
