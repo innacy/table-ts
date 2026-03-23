@@ -1,5 +1,5 @@
 {
-  "name": "incy-table-ts",
+  "name": "@innacyraja/table-ts",
   "version": "1.0.0",
   "description": "cnips Table Accessor - TypeScript client for cnips table operations",
   "main": "dist/index.js",
@@ -24,5 +24,11 @@
   "devDependencies": {
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "@cnips/simplelog": "^1.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
