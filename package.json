@@ -1,5 +1,5 @@
 {
-  "name": "@innacy/table",
+  "name": "incy-table-ts",
   "version": "1.0.0",
   "description": "cnips Table Accessor - TypeScript client for cnips table operations",
   "main": "dist/index.js",
@@ -8,6 +8,7 @@
     "dist"
   ],
   "scripts": {
+    "prepare": "npm run build",
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
