@@ -1,5 +1,5 @@
 {
-  "name": "incy-table-ts",
+  "name": "table-ts",
   "version": "1.0.0",
   "description": "cnips Table Accessor - TypeScript client for cnips table operations",
   "main": "dist/index.js",
