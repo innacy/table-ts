@@ -1,6 +1,6 @@
 {
-  "name": "@innacyraja/table-ts",
-  "version": "1.0.0",
+  "name": "@cnips/table",
+  "version": "1.0.1",
   "description": "cnips Table Accessor - TypeScript client for cnips table operations",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

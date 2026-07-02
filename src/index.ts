@@ -268,9 +268,11 @@ export class CnipsTableAccessor<T> implements TableAccessor<T> {
       throw new Error("failed to get data");
     }
 
-    const resultsT: T[] = new Array(results.data.count);
-    for (let i = 0; i < results.data.list.length; i++) {
-      resultsT[i] = results.data.list[i].data as T;
+    const list = results.data?.list ?? [];
+    const resultsT: T[] = new Array(list.length);
+        
+    for (let i = 0; i < list.length; i++) {
+      resultsT[i] = list[i].data as T;
     }
 
     return resultsT;

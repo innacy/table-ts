@@ -162,9 +162,10 @@ class CnipsTableAccessor {
         if (!results.success) {
             throw new Error("failed to get data");
         }
-        const resultsT = new Array(results.data.count);
-        for (let i = 0; i < results.data.list.length; i++) {
-            resultsT[i] = results.data.list[i].data;
+        const list = results.data?.list ?? [];
+        const resultsT = new Array(list.length);
+        for (let i = 0; i < list.length; i++) {
+            resultsT[i] = list[i].data;
         }
         return resultsT;
     }
