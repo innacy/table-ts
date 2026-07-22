@@ -5,7 +5,8 @@
 export interface TableAccessor<T> {
     insert(tableId: string, data: T, options?: RequestOptions): Promise<void>;
     bulkInsert(tableId: string, data: T[], options?: RequestOptions): Promise<void>;
-    find(tableId: string, query: Record<string, any>, options?: RequestOptions): Promise<T[]>;
+    find(tableId: string, query: Record<string, any>, options?: FindOptions): Promise<T[]>;
+    count(tableId: string, query: Record<string, any>, options?: RequestOptions): Promise<number>;
     delete(tableId: string, query: Record<string, any>, options?: RequestOptions): Promise<void>;
     update(tableId: string, query: Record<string, any>, data: T, options?: RequestOptions): Promise<T[]>;
 }
@@ -15,6 +16,16 @@ export interface TableAccessor<T> {
 export interface RequestOptions {
     /** AbortSignal for request cancellation (replaces Go's context.Context). */
     signal?: AbortSignal;
+}
+/**
+ * FindOptions extends RequestOptions with pagination controls for find().
+ * The server defaults to page=0 and size=10. Maximum size is 10000.
+ */
+export interface FindOptions extends RequestOptions {
+    /** Number of rows per page (1–10000). If omitted, the server uses its default of 10. */
+    size?: number;
+    /** Zero-based page index. If omitted, defaults to 0. */
+    page?: number;
 }
 /**
  * Config holds configuration options for CnipsTableAccessor.
@@ -87,9 +98,15 @@ export declare class CnipsTableAccessor<T> implements TableAccessor<T> {
     /**
      * Retrieves records from the specified table matching the query.
      * Uses POST request to /search endpoint with query in the request body.
-     * Mirrors Go's Find method.
+     * Without FindOptions the server applies its defaults (page=0, size=10).
+     * Pass FindOptions to control pagination. Maximum size is 10000.
      */
-    find(tableId: string, query: Record<string, any>, options?: RequestOptions): Promise<T[]>;
+    find(tableId: string, query: Record<string, any>, options?: FindOptions): Promise<T[]>;
+    /**
+     * Returns the total number of rows matching the query.
+     * Uses the same /search endpoint with size=1 to minimize payload.
+     */
+    count(tableId: string, query: Record<string, any>, options?: RequestOptions): Promise<number>;
     /**
      * Removes records from the specified table matching the query.
      * Uses DELETE request with query in the request body.

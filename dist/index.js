@@ -145,10 +145,18 @@ class CnipsTableAccessor {
     /**
      * Retrieves records from the specified table matching the query.
      * Uses POST request to /search endpoint with query in the request body.
-     * Mirrors Go's Find method.
+     * Without FindOptions the server applies its defaults (page=0, size=10).
+     * Pass FindOptions to control pagination. Maximum size is 10000.
      */
     async find(tableId, query, options) {
-        const requestURL = this.buildSearchURL(tableId);
+        const baseUrl = new URL(this.buildSearchURL(tableId));
+        if (options?.size != null) {
+            baseUrl.searchParams.set("size", String(options.size));
+        }
+        if (options?.page != null) {
+            baseUrl.searchParams.set("page", String(options.page));
+        }
+        const requestURL = baseUrl.toString();
         const requestBody = { filters: query };
         const resp = await this.doRequest("POST", requestURL, requestBody, options);
         if (resp.status !== 200) {
@@ -168,6 +176,29 @@ class CnipsTableAccessor {
             resultsT[i] = list[i].data;
         }
         return resultsT;
+    }
+    /**
+     * Returns the total number of rows matching the query.
+     * Uses the same /search endpoint with size=1 to minimize payload.
+     */
+    async count(tableId, query, options) {
+        const baseUrl = new URL(this.buildSearchURL(tableId));
+        baseUrl.searchParams.set("size", "1");
+        const requestURL = baseUrl.toString();
+        const requestBody = { filters: query };
+        const resp = await this.doRequest("POST", requestURL, requestBody, options);
+        if (resp.status !== 200) {
+            let bodyStr = await resp.text();
+            if (bodyStr.length > 500) {
+                bodyStr = bodyStr.substring(0, 500) + "...";
+            }
+            throw new Error(`unexpected status code ${resp.status}: ${resp.statusText} (response: ${bodyStr})`);
+        }
+        const results = await resp.json();
+        if (!results.success) {
+            throw new Error("failed to get count");
+        }
+        return results.data?.count ?? 0;
     }
     /**
      * Removes records from the specified table matching the query.

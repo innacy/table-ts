@@ -12,8 +12,13 @@ export interface TableAccessor<T> {
   find(
     tableId: string,
     query: Record<string, any>,
-    options?: RequestOptions
+    options?: FindOptions
   ): Promise<T[]>;
+  count(
+    tableId: string,
+    query: Record<string, any>,
+    options?: RequestOptions
+  ): Promise<number>;
   delete(
     tableId: string,
     query: Record<string, any>,
@@ -33,6 +38,17 @@ export interface TableAccessor<T> {
 export interface RequestOptions {
   /** AbortSignal for request cancellation (replaces Go's context.Context). */
   signal?: AbortSignal;
+}
+
+/**
+ * FindOptions extends RequestOptions with pagination controls for find().
+ * The server defaults to page=0 and size=10. Maximum size is 10000.
+ */
+export interface FindOptions extends RequestOptions {
+  /** Number of rows per page (1–10000). If omitted, the server uses its default of 10. */
+  size?: number;
+  /** Zero-based page index. If omitted, defaults to 0. */
+  page?: number;
 }
 
 /**
@@ -234,14 +250,23 @@ export class CnipsTableAccessor<T> implements TableAccessor<T> {
   /**
    * Retrieves records from the specified table matching the query.
    * Uses POST request to /search endpoint with query in the request body.
-   * Mirrors Go's Find method.
+   * Without FindOptions the server applies its defaults (page=0, size=10).
+   * Pass FindOptions to control pagination. Maximum size is 10000.
    */
   async find(
     tableId: string,
     query: Record<string, any>,
-    options?: RequestOptions
+    options?: FindOptions
   ): Promise<T[]> {
-    const requestURL = this.buildSearchURL(tableId);
+    const baseUrl = new URL(this.buildSearchURL(tableId));
+    if (options?.size != null) {
+      baseUrl.searchParams.set("size", String(options.size));
+    }
+    if (options?.page != null) {
+      baseUrl.searchParams.set("page", String(options.page));
+    }
+    const requestURL = baseUrl.toString();
+
     const requestBody = { filters: query };
 
     const resp = await this.doRequest("POST", requestURL, requestBody, options);
@@ -260,7 +285,6 @@ export class CnipsTableAccessor<T> implements TableAccessor<T> {
       success: boolean;
       data: {
         list: Array<{ data: any; [key: string]: any }>;
-        count: number;
       };
     } = await resp.json();
 
@@ -270,12 +294,53 @@ export class CnipsTableAccessor<T> implements TableAccessor<T> {
 
     const list = results.data?.list ?? [];
     const resultsT: T[] = new Array(list.length);
-        
+
     for (let i = 0; i < list.length; i++) {
       resultsT[i] = list[i].data as T;
     }
 
     return resultsT;
+  }
+
+  /**
+   * Returns the total number of rows matching the query.
+   * Uses the same /search endpoint with size=1 to minimize payload.
+   */
+  async count(
+    tableId: string,
+    query: Record<string, any>,
+    options?: RequestOptions
+  ): Promise<number> {
+    const baseUrl = new URL(this.buildSearchURL(tableId));
+    baseUrl.searchParams.set("size", "1");
+    const requestURL = baseUrl.toString();
+
+    const requestBody = { filters: query };
+
+    const resp = await this.doRequest("POST", requestURL, requestBody, options);
+
+    if (resp.status !== 200) {
+      let bodyStr = await resp.text();
+      if (bodyStr.length > 500) {
+        bodyStr = bodyStr.substring(0, 500) + "...";
+      }
+      throw new Error(
+        `unexpected status code ${resp.status}: ${resp.statusText} (response: ${bodyStr})`
+      );
+    }
+
+    const results: {
+      success: boolean;
+      data: {
+        count: number;
+      };
+    } = await resp.json();
+
+    if (!results.success) {
+      throw new Error("failed to get count");
+    }
+
+    return results.data?.count ?? 0;
   }
 
   /**
